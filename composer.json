@@ -1,0 +1,23 @@
+{
+	"name": "comproso/element-leise",
+	"description": "Leise Complex Problem Solving Scenario Element",
+	"keywords": ["comproso"],
+	"type": "library",
+	"version": "0.4.0.0001",
+	"license": "CC-BY-NC-SA-4.0",
+	"authors": [
+		{
+			"name": "Thiemo Kunze",
+			"email": "kunze@wangaz.com",
+			"role": "Developer"
+		}
+	],
+	"require": {
+		"comproso/framework": "~0.7"
+	},
+	"autoload": {
+		"psr-4": {
+			"Comproso\\Elements\\Leise\\": "src/"
+		}
+	}
+}
