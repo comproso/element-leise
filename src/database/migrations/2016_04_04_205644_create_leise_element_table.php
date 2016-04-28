@@ -24,7 +24,7 @@ class CreateLeiseElementTable extends Migration
             $table->decimal('start_value', 10, 4)->nullable()->default(null);
             $table->string('formula')->nullable()->default(null);
             $table->string('unit', 50)->nullable()->default(null);
-            $table->integer('scale')->nullable()->default(null);
+            $table->decimal('scale', 10, 4)->nullable()->default(null);
             $table->integer('decimal')->unsigned()->default(0);
             $table->string('icon')->nullable()->default(null);
             $table->timestamps();
