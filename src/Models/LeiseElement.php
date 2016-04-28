@@ -116,7 +116,7 @@ class LeiseElement extends Model implements ElementContract
 	    // set min
 	    if(isset($vars['min']['values'][$this->variable_name]))
 	    {
-	    	$result['min'] = round($vars['min']['values'][$this->variable_name], $this->scale);
+	    	$result['min'] = round($vars['min']['values'][$this->variable_name], $this->decimal);
 
 	    	$attributes[] = 'min';
 	    }
@@ -124,7 +124,7 @@ class LeiseElement extends Model implements ElementContract
 	    // set max
 	    if(isset($vars['max']['values'][$this->variable_name]))
 	    {
-	    	$result['max'] = round($vars['max']['values'][$this->variable_name], $this->scale);
+	    	$result['max'] = round($vars['max']['values'][$this->variable_name], $this->decimal);
 
 	    	$attributes[] = 'max';
 	    }
@@ -267,7 +267,7 @@ class LeiseElement extends Model implements ElementContract
 	    	$vars = Session::get('leise_variables');
 
 		// update mainfest variable value
-	    if(($this->variable_type == "manifest") AND ($input != round($vars['values']['values'][$this->variable_name], $this->scale)))
+	    if(($this->variable_type == "manifest") AND ($input != round($vars['values']['values'][$this->variable_name], $this->decimal)))
 	    {
 		    	$vars['values']['values'][$this->variable_name] = $input;
 
