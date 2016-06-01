@@ -83,6 +83,11 @@ class LeiseElement extends Model implements ElementContract
         // set DECIMAL
         $this->decimal = (isset($data->decimal)) ? $data->decimal : 0;
 
+        // set TARGET VALUES
+		$this->target_value_min = $data->target_value_min;
+		$this->target_value_max = $data->target_value_max;
+
+
         // return true
         return true;
 	}
@@ -105,6 +110,8 @@ class LeiseElement extends Model implements ElementContract
 		    'scale' => $this->scale,
 		    'type' => $this->variable_type,
 		    'icon' => $this->icon,
+		    'target_min' => round($this->target_value_min, $this->decimal),
+		    'target_max' => round($this->target_value_max, $this->decimal),
 	    ];
 
 	    // prepare attributes

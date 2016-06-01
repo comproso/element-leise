@@ -3,11 +3,17 @@
 		<i class="right floated inverted circular {{ $icon }} icon"></i>
 		<h4 class="header">{{ trans($label) }}</h4>
 		<div class="meta">
-			<span class="abstract">TBD</span>
+			<span class="abstract">
+				@if((isset($target_min)) AND (isset($target_max)) AND ($target_min != 0) AND ($target_max != 0))
+				{{ trans('Zielwerte') }}: von <strong>{{ $target_min }}</strong> bis <strong>{{ $target_max }}</strong> {{ trans($unit) }}
+				@else
+
+				@endif
+			</span>
 		</div>
 		<div class="graph content">
 			<h5 class="ui header">{{ trans('Verlauf') }}</h5>
-			<canvas id="{{ $name }}_graph" height="150"></canvas>
+			<canvas id="{{ $name }}_graph"></canvas>
 		</div>
 		<div class="extra content">
 			<div class="ui mini statistic">

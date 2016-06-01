@@ -22,6 +22,8 @@ class CreateLeiseElementTable extends Migration
             $table->string('minimum')->nullable()->default(null);
             $table->string('maximum')->nullable()->default(null);
             $table->decimal('start_value', 10, 4)->nullable()->default(null);
+            $table->decimal('target_value_min', 10, 4)->nullable()->default(null);
+            $table->decimal('target_value_max', 10, 4)->nullable()->default(null);
             $table->string('formula')->nullable()->default(null);
             $table->string('unit', 50)->nullable()->default(null);
             $table->decimal('scale', 10, 4)->nullable()->default(null);
