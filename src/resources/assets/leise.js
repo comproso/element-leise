@@ -1,4 +1,4 @@
-$(document).on("updated", function () {
+$(document).on("ready", function () {
 	// slider
 	// user input
 	$('.leise.variable .extra.content .data.details input[type="range"]').on("input", function() {
@@ -12,7 +12,7 @@ $(document).on("updated", function () {
 
 	// graphs
 	// prepare round
-	round = $('body#comproso form.cpage input[name="ccusr_rnd"]').val();
+	round = 0;
 
 	// prepare graphs
 	graphs = {};
@@ -27,7 +27,7 @@ $(document).on("updated", function () {
 			{
 				type: 'line',
 				data: {	// data
-					labels: [1],
+					labels: [round],
 					datasets: [{
 						fill: false,
 						lineTension: 0.1,
@@ -37,15 +37,7 @@ $(document).on("updated", function () {
 						borderDash: [],
 						borderDashOffset: 0.0,
 						borderJoinStyle: 'miter',
-						pointBorderColor: "rgba(75,192,192,1)",
-						pointBackgroundColor: "#fff",
-						pointBorderWidth: 1,
-						pointHoverRadius: 5,
-						pointHoverBackgroundColor: "rgba(75,192,192,1)",
-						pointHoverBorderColor: "rgba(220,220,220,1)",
-						pointHoverBorderWidth: 2,
-						pointRadius: 5,
-						pointHitRadius: 10,
+						pointRadius: 0,
 						data:[$(this).find("input").val()]
 					}]
 				},
@@ -67,24 +59,23 @@ $(document).on("updated", function () {
 	});
 });
 
-$(document).on("ajaxProceeded", function()
-{
-	// set current round
-	round = $('body#comproso form.cpage input[name="ccusr_rnd"]').val();
+$(document).on('jsonResponse', function () {
+	round++;
+
+	console.log('triggerActive');
 
 	// update graphs
-	$(".leise.variable").each(function () {
-		graph = graphs[$(this).attr('id')];
-		rnd = ++graph.data.datasets[0].data.length;
+	$.each(graphs, function (id, graph) {
+		console.log(id + ":" + round + '=>' + $('#' + id + ' input').val());
 
-		graph.data.datasets[0].data.push($(this).find('input').val());
-		graph.data.labels.push(rnd);
+		graph.data.datasets[0].data.push($('#' + id + ' input').val());
+		graph.data.labels.push(round);
 		graph.update();
 	});
+});
 
-	$('form.cpage').on('reset', function () {
-		input = $(this).find('.leise.variable input');
-		input.val(input.data('value')[0]);
-		$(this).find('.statistic .value').html(input.val());
-	});
+$('form.cpage').on('reset', function () {
+	input = $(this).find('.leise.variable input');
+	input.val(input.data('value')[0]);
+	$(this).find('.statistic .value').html(input.val());
 });
