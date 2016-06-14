@@ -57,6 +57,13 @@ $(document).on("ready", function () {
 			}
 		);
 	});
+
+	// reset
+	$('form.cpage').on('reset', function () {
+		input = $(this).find('.leise.variable input');
+		input.val(input.data('value')[input.data('value').length - 1]);
+		input.triggerHandler('input');
+	});
 });
 
 $(document).on('jsonResponse', function () {
@@ -72,10 +79,4 @@ $(document).on('jsonResponse', function () {
 		graph.data.labels.push(round);
 		graph.update();
 	});
-});
-
-$('form.cpage').on('reset', function () {
-	input = $(this).find('.leise.variable input');
-	input.val(input.data('value')[0]);
-	$(this).find('.statistic .value').html(input.val());
 });
