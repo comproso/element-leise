@@ -292,6 +292,13 @@ class LeiseElement extends Model implements ElementContract
 	    return $vars['values']['values'][$this->variable_name];
     }
 
+    // finish
+    public function finish()
+    {
+	    if(Session::has('leise_variables'))
+	    	Session::forget('leise_variables');
+    }
+
     // model template
     public function template()
     {

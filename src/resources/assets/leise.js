@@ -69,12 +69,8 @@ $(document).on("ready", function () {
 $(document).on('jsonResponse', function () {
 	round++;
 
-	console.log('triggerActive');
-
 	// update graphs
 	$.each(graphs, function (id, graph) {
-		console.log(id + ":" + round + '=>' + $('#' + id + ' input').val());
-
 		graph.data.datasets[0].data.push($('#' + id + ' input').val());
 		graph.data.labels.push(round);
 		graph.update();
