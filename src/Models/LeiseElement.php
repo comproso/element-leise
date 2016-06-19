@@ -3,8 +3,9 @@
 namespace Comproso\Elements\Leise\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Request;
+#use Illuminate\Http\Request;
 
+use Request;
 use Session;
 use Validator;
 use View;
@@ -96,207 +97,109 @@ class LeiseElement extends Model implements ElementContract
     public function generate($cache = null)
     {
 		// check if Session is prepared
-	    if(!Session::has('leise_variables'))
-		    $this->proceed($cache);
-
-	    // get variables
-	    $vars = Session::get('leise_variables');
+		if(!isset($cache))
+			$val = (isset($this->start_value)) ? $this->start_value : 0;
+		else
+			$val = $cache;
 
 	    // prepare result
-	    $result = [
-		    'label' => $this->label,
-		    'value' => round($vars['values']['values'][$this->variable_name], $this->decimal),
-		    'unit' => (is_null($this->unit)) ? "" : $this->unit,
-		    'scale' => $this->scale,
-		    'type' => $this->variable_type,
-		    'icon' => $this->icon,
-		    'target_min' => round($this->target_value_min, $this->decimal),
-		    'target_max' => round($this->target_value_max, $this->decimal),
-	    ];
-
-	    // prepare attributes
-	    $attributes = ['value'];
-
-	    if($this->type == "manifest")
-	    	$attributes[] = 'scale';
-
-	    // set min
-	    if(isset($vars['min']['values'][$this->variable_name]))
+	    if(!Request::wantsJson())
 	    {
-	    	$result['min'] = round($vars['min']['values'][$this->variable_name], $this->decimal);
+		    $result = [
+			    'type' => 'leise_element',
+			    'label' => $this->label,
+			    'unit' => (is_null($this->unit)) ? "" : $this->unit,
+			    'scale' => $this->scale,
+			    'type' => $this->variable_type,
+			    'icon' => $this->icon,
+			    'target_min' => round($this->target_value_min, $this->decimal),
+			    'target_max' => round($this->target_value_max, $this->decimal),
+		    ];
 
-	    	$attributes[] = 'min';
-	    }
+		    // set min
+		    if($this->maximum !== null)
+		    	$result['min'] = round($this->minimum, $this->decimal);
 
-	    // set max
-	    if(isset($vars['max']['values'][$this->variable_name]))
-	    {
-	    	$result['max'] = round($vars['max']['values'][$this->variable_name], $this->decimal);
+		    // set max
+		    if($this->maximum !== null)
+		    	$result['max'] = round($this->maximum, $this->decimal);
+		}
+		else
+			$result['accessors'] = ['value'];
 
-	    	$attributes[] = 'max';
-	    }
-
-		// add accessors to result
-	    $result['accessors'] = $attributes;
+		// store result
+		$result['value'] = round($val, $this->decimal);
 
 	    // create Element response
 	    return new LeiseElement($result);
     }
 
     // model proceeding
-    public function proceed($input)
+    public function proceed($cache = null)
     {
-	    // get variable
-	    if(!Session::has('leise_variables'))
-	    {
-		    // get item(s)
-		    $items = Item::where('page_id', Session::get('page_id'))->where('element_type', 'Comproso\Elements\Leise\Models\LeiseElement')->orderBy('position')->get();
+	    // differ variable types
+		if($this->variable_type == "manifest")
+		{
+			if((isset($cache)) AND (is_numeric($cache)))
+				$value = $cache;
+			else
+				$value = (isset($cache)) ? $cache : $this->start_value;
+		}
+		else
+			$value = Parser::solve($this->formula, $this->allValues());
 
-		    // prepare variable array
-		    $vars = [
-		    	'values' => ['values' => [], 'formulas' => []],
-		    	'min'	=> ['values' => [], 'formulas' => []],
-		    	'max'	=> ['values' => [], 'formulas' => []],
-		    ];
+		// check for minimum violations
+		if(($this->minimum !== null) AND ($value < $this->minimum))
+			$value = $this->minimum;
 
-		    // prepare start values
-		    foreach($items as $item)
-		    {
-			    if(isset($item->element->start_value))
-			    	$vars['values']['values'][$item->element->variable_name] = $item->element->start_value;
-			    else
-			    	$vars['values']['values'][$item->element->variable_name] = 0;
+		// check for maximum violations
+		if(($this->maximum !== null) AND ($value > $this->maximum))
+			$value = $this->maximum;
 
-			    // set other values in array
-			    if(isset($item->element->formula))
-			    	$vars['values']['formulas'][$item->element->variable_name] = $item->element->formula;
+		// update session
+		$session = Session::put('page_items.'.$this->items()->first()->id, $value);
+		#Session::put('page_items', array_merge($session, [ => $value]));
 
-			    // store type & co
-			    $vars['types'][$item->element->variable_name] = $item->element->variable_type;
-			    $vars['ids'][$item->element->variable_name] = $item->id;
-			    $vars['forms'][$item->element->variable_name] = $item->element->form_name;
-		    }
-
-		    // set start values
-		    foreach($items as $item)
-		    {
-			    // set start values
-			    if(isset($item->element->formula))
-			    	$vars['values']['values'][$item->element->variable_name] = Parser::solve($item->element->formula, $vars['values']['values']);
-
-			    /*
-				 *	MINIMUM
-				 */
-
-			    // store min
-			    $vars['min']['formulas'][$item->element->variable_name] = $item->element->minimum;
-
-			    // calc minimum
-			    if($item->element->minimum !== null)
-			    {
-			    	$vars['min']['values'][$item->element->variable_name] = Parser::solve($item->element->minimum, $vars['values']['values']);
-				    // see if variable minimum
-				    if($vars['min']['values'][$item->element->variable_name] != $item->element->minimum)
-				    	$vars['min']['formulas'][$item->element->variable_name] = $item->element->minimum;
-
-				    // consider minimum
-				    if($vars['values']['values'][$item->element->variable_name] < $vars['min']['values'][$item->element->variable_name])
-				    	$vars['values']['values'][$item->element->variable_name] = $vars['min']['values'][$item->element->variable_name];
-			    }
-
-			    /*
-				 *	MAXIMUM
-				 */
-
-			    // store max
-			    $vars['max']['formulas'][$item->element->variable_name] = $item->element->maximum;
-
-			    // calc maximum
-			    if($item->element->maximum !== null)
-			    {
-			    	$vars['max']['values'][$item->element->variable_name] = Parser::solve($item->element->maximum, $vars['values']['values']);
-
-				    // see if variable maximum
-				    if((isset($vars['max']['values'][$item->element->variable_name])) AND ($vars['max']['values'][$item->element->variable_name] != $item->element->maximum))
-				    	$vars['max']['formulas'][$item->element->variable_name] = $item->element->maximum;
-
-				    // consider maximum
-				    if((isset($vars['max']['values'][$item->element->variable_name])) AND ($vars['values']['values'][$item->element->variable_name] > $vars['max']['values'][$item->element->variable_name]))
-				    	$vars['values']['values'][$item->element->variable_name] = $vars['max']['values'][$item->element->variable_name];
-			    }
-		    }
-
-		    // store results in Session
-		    Session::put('leise_variables', $vars);
-	    }
-
-	    // set session for proceeding
-	    if(($this->variable_type == "latent") AND (!Session::has('leise_calc_id')))
-	    	Session::put('leise_calc_id', $this->id);
-
-	    // calculate variables
-	    if((!isset($vars)) AND ($this->id === Session::get('leise_calc_id')))
-	    {
-		    // get Session variables
-		    $vars = Session::pull('leise_variables');
-
-			// calculate data
-			foreach($vars['values']['values'] as $var_name => $value)
-			{
-				// solve formula if existing
-				if(isset($vars['values']['formulas'][$var_name]))
-					$vars['values']['values'][$var_name] = Parser::solve($vars['values']['formulas'][$var_name], $vars['values']['values']);
-
-				// calc minimum
-			    if(isset($vars['min']['formulas'][$var_name]))
-			    	$vars['min']['values'][$var_name] = Parser::solve($vars['min']['formulas'][$var_name], $vars['values']['values']);
-
-			    // consider minimum
-			    if((isset($vars['min']['values'][$var_name])) AND ($vars['min']['values'][$var_name] > $vars['values']['values'][$var_name]))
-			    	$vars['values']['values'][$var_name] = $vars['min']['values'][$var_name];
-
-				// calc maximum
-			    if(isset($vars['max']['formulas'][$var_name]))
-			    	$vars['max']['values'][$var_name] = Parser::solve($vars['max']['formulas'][$var_name], $vars['values']['values']);
-
-			    // consider maximum
-			    if((isset($vars['max']['values'][$var_name])) AND ($vars['max']['values'][$var_name] < $vars['values']['values'][$var_name]))
-			    	$vars['values']['values'][$var_name] = $vars['max']['values'][$var_name];
-
-			}
-
-			// store results in Session
-			Session::put('leise_variables', $vars);
-	    }
-
-	    // get vars if not defined
-	    if(!isset($vars))
-	    	$vars = Session::get('leise_variables');
-
-		// update mainfest variable value
-	    if(($this->variable_type == "manifest") AND ($input != round($vars['values']['values'][$this->variable_name], $this->decimal)))
-	    {
-		    	$vars['values']['values'][$this->variable_name] = $input;
-
-				// store session
-				#Session::forget('leise_variables');			// TBD: constant variable list with changing only individual arrays/session vars
-				Session::put('leise_variables', $vars);
-	    }
-
-	    #\Log::debug($this->variable_name);
-	    #\Log::debug($input);
-	    #\Log::debug($vars['values']['values'][$this->variable_name]);
-	    #\Log::debug("=====================================");
-
-	    // return variable value
-	    return $vars['values']['values'][$this->variable_name];
+		// return results
+		return $value;
     }
+
+	// get all values
+	public function allValues()
+	{
+		// get items
+		$items = Item::where('page_id', Session::get('page_id'))
+								->where('element_type', 'Comproso\Elements\Leise\Models\LeiseElement')
+								->orderBy('position')
+								->get();
+
+		// get session
+		$session = Session::get('page_items');
+
+		// prepare values
+		$values = [];
+
+		foreach($items as $item)
+		{
+			if(($item->element->variable_type == "manifest") AND (Request::has('item'.$item->id)) AND (is_numeric(Request::input('item'.$item->id))))
+				$value = Request::input('item'.$item->id);
+			elseif(isset($session[$item->id]))
+				$value = $session[$item->id];
+			else
+				$value = ($item->start_value !== null) ? $item->start_value : 0;
+
+			$values[$item->element->variable_name] = $value;
+		}
+
+		// return values
+		return $values;
+	}
 
     // finish
     public function finish()
     {
-	    if(Session::has('leise_variables'))
-	    	Session::forget('leise_variables');
+	    #if(Session::has('leise_variables'))
+	    #	Session::forget('leise_variables');
     }
 
     // model template
