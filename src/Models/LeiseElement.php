@@ -97,8 +97,10 @@ class LeiseElement extends Model implements ElementContract
     public function generate($cache = null)
     {
 		// check if Session is prepared
-		if(!isset($cache))
+		if((!isset($cache)) AND (Session::get('page_visit_counter') == 0) AND ($this->variable_type == "manifest"))
 			$val = (isset($this->start_value)) ? $this->start_value : 0;
+		elseif(!isset($cache))
+			$val = $this->proceed($cache);
 		else
 			$val = $cache;
 
