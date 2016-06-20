@@ -97,9 +97,11 @@ class LeiseElement extends Model implements ElementContract
     public function generate($cache = null)
     {
 		// check if Session is prepared
-		if((!isset($cache)) AND (Session::get('page_visit_counter') == 0) AND ($this->variable_type == "manifest"))
-			$val = (isset($this->start_value)) ? $this->start_value : 0;
-		elseif(!isset($cache))
+		if(($cache === null) AND (Session::get('page_visit_counter') == 0) AND ($this->variable_type == "manifest"))
+			$val = ($this->start_value !== null) ? $this->start_value : 0;
+		elseif((Session::get('page_visit_counter') == 0) AND ($this->variable_type == "latent"))
+			$val = $this->proceed($this->start_value);
+		elseif(($cache === null))
 			$val = $this->proceed($cache);
 		else
 			$val = $cache;
@@ -148,7 +150,7 @@ class LeiseElement extends Model implements ElementContract
 				$value = (isset($cache)) ? $cache : $this->start_value;
 		}
 		else
-			$value = Parser::solve($this->formula, $this->allValues());
+			$value = Parser::solve($this->formula, $this->allValues($cache));
 
 		// check for minimum violations
 		if(($this->minimum !== null) AND ($value < $this->minimum))
@@ -167,7 +169,7 @@ class LeiseElement extends Model implements ElementContract
     }
 
 	// get all values
-	public function allValues()
+	public function allValues($cache = null)
 	{
 		// get items
 		$items = Item::where('page_id', Session::get('page_id'))
@@ -183,14 +185,19 @@ class LeiseElement extends Model implements ElementContract
 
 		foreach($items as $item)
 		{
-			if(($item->element->variable_type == "manifest") AND (Request::has('item'.$item->id)) AND (is_numeric(Request::input('item'.$item->id))))
-				$value = Request::input('item'.$item->id);
-			elseif(isset($session[$item->id]))
-				$value = $session[$item->id];
+			if(($cache !== null) AND ($item->element->id === $this->id))
+				$values[$item->element->variable_name] = $cache;
 			else
-				$value = ($item->start_value !== null) ? $item->start_value : 0;
+			{
+				if(($item->element->variable_type == "manifest") AND (Request::has('item'.$item->id)) AND (is_numeric(Request::input('item'.$item->id))))
+					$value = Request::input('item'.$item->id);
+				elseif(isset($session[$item->id]))
+					$value = $session[$item->id];
+				else
+					$value = ($item->start_value !== null) ? $item->start_value : 0;
 
-			$values[$item->element->variable_name] = $value;
+				$values[$item->element->variable_name] = $value;
+			}
 		}
 
 		// return values
