@@ -22,6 +22,9 @@ $(document).on("ready", function () {
 		// get canvas
 		canvas = $(this).find('.graph.content canvas');
 
+		canvas.attr('width', $(this).width());
+		canvas.attr('height', canvas.parent().height());
+
 		// set graph
 		graphs[$(this).attr('id')] = new Chart(canvas.get(0).getContext("2d"),
 			{
