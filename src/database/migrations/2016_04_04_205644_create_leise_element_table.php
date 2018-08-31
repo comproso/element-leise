@@ -16,9 +16,9 @@ class CreateLeiseElementTable extends Migration
             $table->increments('id');
             #$table->integer('item_id')->unsigned();
             #$table->string('form_name');
-            $table->string('label');
-            $table->string('variable_name', 1);
-            $table->enum('variable_type', ['manifest', 'latent']);
+            $table->string('label')->nullable();
+            $table->string('variable_name', 1)->nullable();
+            $table->enum('variable_type', ['manifest', 'latent'])->nullable();
             $table->string('minimum')->nullable()->default(null);
             $table->string('maximum')->nullable()->default(null);
             $table->decimal('start_value', 10, 4)->nullable()->default(null);
@@ -29,7 +29,7 @@ class CreateLeiseElementTable extends Migration
             $table->decimal('scale', 10, 4)->nullable()->default(null);
             $table->integer('decimal')->unsigned()->default(0);
             $table->string('icon')->nullable()->default(null);
-            $table->timestamps();
+            $table->nullableTimestamps();
         });
     }
 
